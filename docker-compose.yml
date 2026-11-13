@@ -1,0 +1,53 @@
+services:
+  # Generates a self-signed TLS certificate for PostgreSQL once per volume.
+  certgen:
+    image: postgres:17
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        if [ -f /certs/server.crt ] && [ -f /certs/server.key ]; then echo "certs exist"; exit 0; fi
+        openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=pgtun" -keyout /certs/server.key -out /certs/server.crt
+        chown 999:999 /certs/server.key /certs/server.crt
+        chmod 600 /certs/server.key
+        chmod 644 /certs/server.crt
+    volumes:
+      - "pgcerts:/certs"
+    restart: "no"
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    depends_on:
+      certgen:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      PGTUN_PASSWORD: ${PGTUN_PASSWORD:?PGTUN_PASSWORD is required}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - pgcerts:/var/lib/postgresql/ssl:ro
+      - ./docker/init.sh:/docker-entrypoint-initdb.d/10-pgtun.sh:ro
+    command: ["postgres", "-c", "ssl=on", "-c", "ssl_cert_file=/var/lib/postgresql/ssl/server.crt", "-c", "ssl_key_file=/var/lib/postgresql/ssl/server.key"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  pgtun:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGTUN_DSN: postgres://pgtun:${PGTUN_PASSWORD}@db:5432/postgres?sslmode=require
+    command: ["server"]
+
+volumes:
+  pgdata:
+  pgcerts:

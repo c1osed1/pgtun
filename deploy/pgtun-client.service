@@ -1,0 +1,50 @@
+# pgtun client as an always-on LAN gateway, e.g. on a Raspberry Pi or a home
+# server in the same network as the phone running HAPP.
+#
+# Install:
+#   1. Build/copy the binary:
+#        make release            # or: go build -o pgtun ./cmd/pgtun
+#        install -m 0755 pgtun-linux-arm64 /usr/local/bin/pgtun
+#   2. Write the config (flags in ExecStart override this file):
+#        install -d -m 0755 /etc/pgtun
+#        install -m 0600 client.json /etc/pgtun/client.json
+#      client.json example:
+#        {
+#          "dsn": "postgres://pgtun:PASS@VPS:5432/postgres?sslmode=require",
+#          "socks": "127.0.0.1:1080",
+#          "ss": "0.0.0.0:8388",
+#          "ss_method": "chacha20-ietf-poly1305",
+#          "ss_password": "SS_PASSWORD",
+#          "max_streams": 256
+#        }
+#   3. Install and enable the unit:
+#        cp deploy/pgtun-client.service /etc/systemd/system/
+#        systemctl daemon-reload
+#        systemctl enable --now pgtun-client
+#   4. Run `journalctl -u pgtun-client -f` and `pgtun client --print-sub ...`
+#      (or read the QR printed in the journal) to import the profile into HAPP.
+#
+# Runs as root only because port/config permissions are simplest that way.
+# For a dedicated user replace User=root with e.g. User=pgtun and make the
+# config readable by that user.
+
+[Unit]
+Description=pgtun client (PostgreSQL tunnel, SOCKS5/Shadowsocks LAN gateway)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/pgtun client --config /etc/pgtun/client.json
+Restart=always
+RestartSec=3
+# Optional hardening; uncomment if the config path/permissions allow it:
+# NoNewPrivileges=true
+# ProtectSystem=strict
+# ProtectHome=true
+# ReadOnlyPaths=/etc/pgtun
+# Environment=PGTUN_SS_PASSWORD=secret
+
+[Install]
+WantedBy=multi-user.target
