@@ -17,7 +17,7 @@ jobs:
           - macos-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27'
@@ -33,21 +33,21 @@ jobs:
   ps1:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: parse PowerShell client setup
         run: pwsh -NoProfile -Command "[void][scriptblock]::Create((Get-Content -Raw ./scripts/client-setup.ps1)); 'PS_OK'"
 
   compose:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: validate docker compose file
         run: cp .env.example .env && docker compose config > /dev/null
 
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27'
