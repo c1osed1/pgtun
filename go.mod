@@ -1,4 +1,4 @@
-module pgtun
+module github.com/c1osed1/pgtun
 
 go 1.27
 

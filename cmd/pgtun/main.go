@@ -12,9 +12,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"pgtun/internal/client"
-	"pgtun/internal/server"
-	"pgtun/internal/sub"
+	"github.com/c1osed1/pgtun/internal/client"
+	"github.com/c1osed1/pgtun/internal/server"
+	"github.com/c1osed1/pgtun/internal/sub"
 )
 
 // version is the release string printed by `pgtun --version` and

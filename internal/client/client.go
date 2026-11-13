@@ -12,10 +12,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"pgtun/internal/socks"
-	"pgtun/internal/ss"
-	"pgtun/internal/store"
-	"pgtun/internal/sub"
+	"github.com/c1osed1/pgtun/internal/socks"
+	"github.com/c1osed1/pgtun/internal/ss"
+	"github.com/c1osed1/pgtun/internal/store"
+	"github.com/c1osed1/pgtun/internal/sub"
 )
 
 // Config configures the client.

@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"pgtun/internal/store"
+	"github.com/c1osed1/pgtun/internal/store"
 )
 
 // Config configures the egress server.
