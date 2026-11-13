@@ -1,0 +1,36 @@
+# VCS and local environment
+.git
+.gitignore
+.gitattributes
+.env
+.env.example
+
+# Build output and logs
+dist
+bin
+*.log
+*.out
+coverage.out
+
+# OS junk
+.DS_Store
+
+# Secrets and generated certs
+certs
+*.pem
+*.key
+
+# Docs, CI, deploy helpers, scripts and ops files are not needed to build
+README.md
+SECURITY.md
+CHANGELOG.md
+LICENSE
+.github
+deploy
+scripts
+docker
+docker-compose.yml
+Makefile
+
+# Tests are not compiled into the image
+internal/**/*_test.go

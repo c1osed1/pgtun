@@ -319,6 +319,18 @@ EOF
 )
 chmod 600 "$CONFIG" 2>/dev/null || true
 
+# --- exposure warning ------------------------------------------------------
+
+# Shadowsocks listens on 0.0.0.0 by default so phones in the same LAN can reach
+# it. Anything that is not loopback is exposed to the local network; the only
+# protection is the SS password. Warn once, keep the default unchanged.
+case "$SS" in
+    ""|127.*|"localhost:"*|"[::1]:"*|"::1:"*) ;;
+    *)
+        log "WARNING: Shadowsocks listens on $SS, reachable from the LAN and protected only by the password — keep TCP ${SS##*:} firewalled."
+        ;;
+esac
+
 # --- print-only ------------------------------------------------------------
 
 if [ "$PRINT_ONLY" -eq 1 ]; then

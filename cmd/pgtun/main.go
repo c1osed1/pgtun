@@ -18,8 +18,9 @@ import (
 )
 
 // version is the release string printed by `pgtun --version` and
-// `pgtun version`.
-const version = "0.2.0"
+// `pgtun version`. It is injected at build time via
+// -ldflags "-X main.version=..." and defaults to "dev".
+var version = "dev"
 
 const usageText = `pgtun - tunnel SOCKS5/Shadowsocks through a real PostgreSQL database
 

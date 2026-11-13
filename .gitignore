@@ -4,3 +4,8 @@ bin/
 .DS_Store
 dist/
 *.test
+certs/
+*.pem
+*.key
+coverage.out
+*.out

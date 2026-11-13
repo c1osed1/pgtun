@@ -6,6 +6,7 @@ set -eu
 : "${POSTGRES_USER:?POSTGRES_USER is required}"
 : "${POSTGRES_DB:?POSTGRES_DB is required}"
 : "${PGTUN_PASSWORD:?PGTUN_PASSWORD is required}"
+: "${PGDATA:?PGDATA is required}"
 
 psql -v ON_ERROR_STOP=1 \
      --username "$POSTGRES_USER" \
@@ -40,4 +41,29 @@ CREATE INDEX IF NOT EXISTS chunks_stream_dir_id_idx
 
 GRANT ALL ON ALL TABLES IN SCHEMA pgtun TO pgtun;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA pgtun TO pgtun;
+
+-- The tunnel role never needs elevated rights.
+ALTER ROLE pgtun NOSUPERUSER NOCREATEDB NOCREATEROLE;
+
+-- Only the tunnel role may connect remotely; everyone else is rejected by the
+-- pg_hba.conf rules written below. PUBLIC keeps no privileges on the database,
+-- so CONNECT is granted to pgtun explicitly.
+REVOKE ALL ON DATABASE postgres FROM PUBLIC;
+GRANT CONNECT ON DATABASE postgres TO pgtun;
 EOSQL
+
+# Force TLS for remote clients and lock out everything else. `local` stays
+# trust for the container-internal entrypoint/healthcheck (unix socket only);
+# remote non-SSL connections and any other role are rejected outright.
+cat > "$PGDATA/pg_hba.conf" <<'HBA'
+local   all   all                 trust
+hostssl all   pgtun  0.0.0.0/0    scram-sha-256
+hostssl all   pgtun  ::/0         scram-sha-256
+host    all   all    all          reject
+HBA
+chmod 600 "$PGDATA/pg_hba.conf"
+
+psql -v ON_ERROR_STOP=1 \
+     --username "$POSTGRES_USER" \
+     --dbname "$POSTGRES_DB" \
+     -c "SELECT pg_reload_conf();"

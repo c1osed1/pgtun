@@ -1,0 +1,55 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+      - name: gofmt
+        run: gofmt -l . > /tmp/fmt && test ! -s /tmp/fmt
+      - name: build
+        run: go build ./...
+      - name: vet
+        run: go vet ./...
+      - name: test
+        run: go test ./...
+
+  ps1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: parse PowerShell client setup
+        run: pwsh -NoProfile -Command "[void][scriptblock]::Create((Get-Content -Raw ./scripts/client-setup.ps1)); 'PS_OK'"
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: validate docker compose file
+        run: cp .env.example .env && docker compose config > /dev/null
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+      - name: end-to-end tunnel over PostgreSQL
+        run: ./scripts/e2e.sh

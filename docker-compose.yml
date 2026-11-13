@@ -19,6 +19,9 @@ services:
   db:
     image: postgres:17
     restart: unless-stopped
+    security_opt:
+      - "no-new-privileges:true"
+    shm_size: 256mb
     depends_on:
       certgen:
         condition: service_completed_successfully
@@ -39,7 +42,21 @@ services:
       retries: 12
 
   pgtun:
-    build: .
+    build:
+      context: .
+      args:
+        VERSION: "${VERSION:-dev}"
+    init: true
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - "ALL"
+    read_only: true
+    tmpfs:
+      - "/tmp"
+    pids_limit: 512
+    mem_limit: 512m
+    cpus: 1.0
     restart: unless-stopped
     depends_on:
       db:
@@ -47,6 +64,11 @@ services:
     environment:
       PGTUN_DSN: postgres://pgtun:${PGTUN_PASSWORD}@db:5432/postgres?sslmode=require
     command: ["server"]
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'pgtun server' >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:
